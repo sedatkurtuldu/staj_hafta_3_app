@@ -15,116 +15,162 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import { Ionicons } from "@expo/vector-icons";
 
 const TaskListScreen = () => {
-    const [tasks, setTasks] = useState([]);
-    const [title, setTitle] = useState("");
-    const [description, setDescription] = useState("");
-    const [date, setDate] = useState(new Date());
-    const [showDatePicker, setShowDatePicker] = useState(false);
-  
-    const addTask = () => {
-      if (title.trim() === "" || description.trim() === "") return;
-      const newTask = {
-        id: Date.now().toString(),
-        title,
-        description,
-        date,
-      };
-      setTasks((prevTasks) => [...prevTasks, newTask].sort((a, b) => a.date - b.date));
-      setTitle("");
-      setDescription("");
-      setDate(new Date());
+  const [tasks, setTasks] = useState([]);
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [date, setDate] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
+
+  const addTask = () => {
+    if (title.trim() === "" || description.trim() === "") {
+      Alert.alert("Hata", "Lütfen tüm alanları doldurun.");
+      return;
+    }
+    const newTask = {
+      id: Date.now().toString(),
+      title,
+      description,
+      date,
     };
-  
-    const removeTask = (id) => {
-      Alert.alert(
-        "Görevi Sil",
-        "Bu görevi tamamladınız mı?",
-        [
-          { text: "Hayır", style: "cancel" },
-          {
-            text: "Evet",
-            onPress: () => setTasks((prevTasks) => prevTasks.filter((task) => task.id !== id)),
-          },
-        ]
-      );
-    };
-  
-    const handleDateChange = (event, selectedDate) => {
-      setShowDatePicker(false);
-      if (selectedDate) {
-        setDate(selectedDate);
-      }
-    };
-  
-    return (
-      <SafeAreaView style={styles.container}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={{ flex: 1 }}
-        >
-          <View style={styles.form}>
-            <TextInput
-              style={styles.input}
-              placeholder="Görev Başlığı"
-              value={title}
-              onChangeText={setTitle}
-            />
-            <TextInput
-              style={[styles.input, styles.textArea]}
-              placeholder="Kısa Açıklama"
-              value={description}
-              onChangeText={setDescription}
-              multiline
-            />
-            <TouchableOpacity
-              style={styles.datePickerButton}
-              onPress={() => setShowDatePicker(true)}
-            >
-              <Ionicons name="calendar-outline" size={20} color="#fff" />
-              <Text style={styles.datePickerText}>
-                {date.toLocaleDateString("tr-TR")}
-              </Text>
-            </TouchableOpacity>
-            {showDatePicker && (
-              <DateTimePicker
-                value={date}
-                mode="date"
-                display="default"
-                minimumDate={new Date()}
-                onChange={handleDateChange}
-              />
-            )}
-            <TouchableOpacity style={styles.addButton} onPress={addTask}>
-              <Ionicons name="add-outline" size={24} color="#fff" />
-              <Text style={styles.addButtonText}>Görev Ekle</Text>
-            </TouchableOpacity>
-          </View>
-          <FlatList
-            data={tasks}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <View style={styles.taskItem}>
-                <View style={styles.taskContent}>
-                  <Text style={styles.taskTitle}>{item.title}</Text>
-                  <Text style={styles.taskDescription}>{item.description}</Text>
-                  <Text style={styles.taskDate}>
-                    Tamamlanma Tarihi: {new Date(item.date).toLocaleDateString("tr-TR")}
-                  </Text>
-                </View>
-                <TouchableOpacity
-                  style={styles.completeButton}
-                  onPress={() => removeTask(item.id)}
-                >
-                  <Ionicons name="checkmark-done-outline" size={24} color="#fff" />
-                </TouchableOpacity>
-              </View>
-            )}
-          />
-        </KeyboardAvoidingView>
-      </SafeAreaView>
+    setTasks((prevTasks) => [...prevTasks, newTask].sort((a, b) => a.date - b.date));
+    setTitle("");
+    setDescription("");
+    setDate(new Date());
+  };
+
+  const removeTask = (id) => {
+    Alert.alert(
+      "Görevi Sil",
+      "Bu görevi tamamladınız mı?",
+      [
+        { text: "Hayır", style: "cancel" },
+        {
+          text: "Evet",
+          onPress: () => setTasks((prevTasks) => prevTasks.filter((task) => task.id !== id)),
+        },
+      ]
     );
+  };
+
+  const handleDateChange = (event, selectedDate) => {
+    setShowDatePicker(false);
+    if (selectedDate) {
+      setDate(selectedDate);
+    }
+  };
+
+  const handleTimeChange = (event, selectedTime) => {
+    setShowTimePicker(false);
+    if (selectedTime) {
+      const updatedDate = new Date(date);
+      updatedDate.setHours(selectedTime.getHours(), selectedTime.getMinutes());
+      setDate(updatedDate);
+    }
+  };
+
+  const getTaskStyle = (taskDate) => {
+    const now = new Date();
+    const oneHour = 60 * 60 * 1000;
+    const oneDay = 24 * oneHour;
+    const timeDifference = new Date(taskDate) - now;
+
+    if (timeDifference < 0) {
+      return styles.overdueTask;
+    } else if (timeDifference <= oneHour) {
+      return styles.oneHourLeftTask;
+    } else if (timeDifference <= oneDay) {
+      return styles.oneDayLeftTask;
+    } else {
+      return styles.defaultTask;
+    }
+  };
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
+      >
+        <View style={styles.form}>
+          <TextInput
+            style={styles.input}
+            placeholder="Görev Başlığı"
+            value={title}
+            onChangeText={setTitle}
+          />
+          <TextInput
+            style={[styles.input, styles.textArea]}
+            placeholder="Kısa Açıklama"
+            value={description}
+            onChangeText={setDescription}
+            multiline
+          />
+          <TouchableOpacity
+            style={styles.datePickerButton}
+            onPress={() => setShowDatePicker(true)}
+          >
+            <Ionicons name="calendar-outline" size={20} color="#fff" />
+            <Text style={styles.datePickerText}>
+              {date.toLocaleDateString("tr-TR")}
+            </Text>
+          </TouchableOpacity>
+          {showDatePicker && (
+            <DateTimePicker
+              value={date}
+              mode="date"
+              display="default"
+              minimumDate={new Date()}
+              onChange={handleDateChange}
+            />
+          )}
+          <TouchableOpacity
+            style={styles.timePickerButton}
+            onPress={() => setShowTimePicker(true)}
+          >
+            <Ionicons name="time-outline" size={20} color="#fff" />
+            <Text style={styles.datePickerText}>
+              {date.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })}
+            </Text>
+          </TouchableOpacity>
+          {showTimePicker && (
+            <DateTimePicker
+              value={date}
+              mode="time"
+              display="default"
+              onChange={handleTimeChange}
+            />
+          )}
+          <TouchableOpacity style={styles.addButton} onPress={addTask}>
+            <Ionicons name="add-outline" size={24} color="#fff" />
+            <Text style={styles.addButtonText}>Görev Ekle</Text>
+          </TouchableOpacity>
+        </View>
+        <FlatList
+          data={tasks}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <View style={[styles.taskItem, getTaskStyle(item.date)]}>
+              <View style={styles.taskContent}>
+                <Text style={styles.taskTitle}>{item.title}</Text>
+                <Text style={styles.taskDescription}>{item.description}</Text>
+                <Text style={styles.taskDate}>
+                  Tamamlanma Tarihi: {new Date(item.date).toLocaleString("tr-TR")}
+                </Text>
+              </View>
+              <TouchableOpacity
+                style={styles.completeButton}
+                onPress={() => removeTask(item.id)}
+              >
+                <Ionicons name="checkmark-done-outline" size={24} color="#fff" />
+              </TouchableOpacity>
+            </View>
+          )}
+        />
+      </KeyboardAvoidingView>
+    </SafeAreaView>
+  );
 };
-  
 
 export default TaskListScreen;
 
@@ -146,6 +192,15 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#007bff",
+    padding: 12,
+    borderRadius: 10,
+    marginBottom: 12,
+    justifyContent: "space-between",
+  },
+  timePickerButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#6c757d",
     padding: 12,
     borderRadius: 10,
     marginBottom: 12,
@@ -183,5 +238,17 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     justifyContent: "center",
     alignItems: "center",
+  },
+  overdueTask: {
+    backgroundColor: "#f8d7da",
+  },
+  oneHourLeftTask: {
+    backgroundColor: "#fff3cd",
+  },
+  oneDayLeftTask: {
+    backgroundColor: "#d1ecf1",
+  },
+  defaultTask: {
+    backgroundColor: "#d4edda",
   },
 });
